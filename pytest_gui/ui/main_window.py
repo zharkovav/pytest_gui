@@ -30,6 +30,7 @@ class TestRunnerSignalBridge(QObject):
     state_changed = Signal(object)  # TestRunnerState
     progress_updated = Signal(object)  # TestRunnerProgress
     test_result = Signal(object)  # TestResult
+    test_started = Signal(str)  # Test path that started
     output_line = Signal(str)  # Output line
 
 
@@ -344,12 +345,14 @@ class MainWindow(QMainWindow):
         self.signal_bridge.state_changed.connect(self.on_test_runner_state_changed)
         self.signal_bridge.progress_updated.connect(self.on_test_progress_update)
         self.signal_bridge.test_result.connect(self.on_test_result)
+        self.signal_bridge.test_started.connect(self.on_test_started)
         self.signal_bridge.output_line.connect(self.on_test_output_line)
         
         # Connect test runner callbacks to signal bridge
         self.test_runner.on_state_changed = self.signal_bridge.state_changed.emit
         self.test_runner.on_progress_update = self.signal_bridge.progress_updated.emit
         self.test_runner.on_test_result = self.signal_bridge.test_result.emit
+        self.test_runner.on_test_started = self.signal_bridge.test_started.emit
         self.test_runner.on_output_line = self.signal_bridge.output_line.emit
         
         # Connect progress panel signals
@@ -485,6 +488,9 @@ class MainWindow(QMainWindow):
                 self.progress_bar.setRange(0, 0)  # Indeterminate progress
             if self.output_console:
                 self.output_console.append("=== Test execution started ===")
+            # Reset all test statuses to PENDING when starting
+            if self.test_tree:
+                self.test_tree.reset_test_statuses()
         elif state == TestRunnerState.STOPPING:
             self.status_label.setText("Stopping tests...")
             if self.output_console:
@@ -524,6 +530,12 @@ class MainWindow(QMainWindow):
             if self.progress_bar:
                 self.progress_bar.setRange(0, progress.total_tests)
                 self.progress_bar.setValue(progress.completed_tests)
+            
+    def on_test_started(self, test_path: str) -> None:
+        """Handle test started event."""
+        # Update test tree to show test is running
+        if self.test_tree:
+            self.test_tree.set_test_running(test_path)
             
     def on_test_result(self, result) -> None:
         """Handle individual test results."""

@@ -79,16 +79,17 @@ class TestRunner:
         # Callbacks
         self.on_progress_update: Optional[Callable[[TestRunnerProgress], None]] = None
         self.on_test_result: Optional[Callable[[TestResult], None]] = None
+        self.on_test_started: Optional[Callable[[str], None]] = None  # Called when a test starts
         self.on_output_line: Optional[Callable[[str], None]] = None
         self.on_state_changed: Optional[Callable[[TestRunnerState], None]] = None
         
         # Output parsing patterns
         self.test_patterns = {
-            'test_start': re.compile(r'^(.+?)::\S+ '),
-            'test_passed': re.compile(r'^(.+?) PASSED'),
-            'test_failed': re.compile(r'^(.+?) FAILED'),
-            'test_skipped': re.compile(r'^(.+?) SKIPPED'),
-            'test_error': re.compile(r'^(.+?) ERROR'),
+            'test_start': re.compile(r'^([^:]+::[^:]+(?:::[^:]+)*)\s+\.\.\.'),
+            'test_passed': re.compile(r'^([^:]+::[^:]+(?:::[^:]+)*)\s+PASSED\s*(?:\[.*?\])?'),
+            'test_failed': re.compile(r'^([^:]+::[^:]+(?:::[^:]+)*)\s+FAILED\s*(?:\[.*?\])?'),
+            'test_skipped': re.compile(r'^([^:]+::[^:]+(?:::[^:]+)*)\s+SKIPPED\s*(?:\([^)]*\))?\s*(?:\[.*?\])?'),
+            'test_error': re.compile(r'^([^:]+::[^:]+(?:::[^:]+)*)\s+ERROR\s*(?:\[.*?\])?'),
             'progress': re.compile(r'\[(\d+)%\]'),
             'collecting': re.compile(r'collected (\d+) item'),
         }
@@ -238,6 +239,8 @@ class TestRunner:
         cmd.extend([
             '--tb=short',  # Short traceback format
             '-v',          # Verbose output
+            # '--no-header', # No header
+            # '--no-summary' # No summary
         ])
         
         # Add custom arguments
@@ -301,12 +304,22 @@ class TestRunner:
         """Parse test result from output line."""
         test_result = None
         
+        # Check for test start pattern first
+        start_match = self.test_patterns['test_start'].search(line)
+        if start_match:
+            test_path = start_match.group(1)
+            self.logger.debug(f"Test started: {test_path}")
+            if self.on_test_started:
+                self.on_test_started(test_path)
+            return
+        
         # Check for test status patterns
         for status_name, pattern in self.test_patterns.items():
-            if status_name.startswith('test_'):
+            if status_name.startswith('test_') and status_name != 'test_start':
                 match = pattern.search(line)
                 if match:
                     test_path = match.group(1)
+                    self.logger.debug(f"Test result: {test_path} -> {status_name}")
                     
                     if status_name == 'test_passed':
                         status = TestStatus.PASSED

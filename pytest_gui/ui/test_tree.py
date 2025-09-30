@@ -353,10 +353,57 @@ class TestTreeWidget(QTreeWidget):
             
     def update_test_status(self, test_path: str, status: TestStatus) -> None:
         """Update the status of a specific test."""
+        self.logger.debug(f"Updating test status: {test_path} -> {status.value}")
+        
+        # Try exact match first
         item = self.item_map.get(test_path)
         if item:
+            self.logger.debug(f"Found exact match for: {test_path}")
             item.test_node.status = status
             item.update_from_node()
+            return
+            
+        # If no exact match, try to find by partial matching
+        # This handles cases where paths might have slight differences
+        for stored_path, stored_item in self.item_map.items():
+            # Try matching the test function/method name part
+            if '::' in test_path and '::' in stored_path:
+                test_parts = test_path.split('::')
+                stored_parts = stored_path.split('::')
+                
+                # Match if the last part (function name) and file name match
+                if (len(test_parts) >= 2 and len(stored_parts) >= 2 and
+                    test_parts[-1] == stored_parts[-1] and  # Same function name
+                    test_parts[0].split('/')[-1] == stored_parts[0].split('/')[-1]):  # Same file name
+                    
+                    self.logger.debug(f"Found partial match: {test_path} -> {stored_path}")
+                    stored_item.test_node.status = status
+                    stored_item.update_from_node()
+                    return
+                    
+        # If still no match, try a more flexible approach
+        test_name = test_path.split('::')[-1] if '::' in test_path else test_path
+        for stored_path, stored_item in self.item_map.items():
+            if stored_path.endswith(f"::{test_name}"):
+                self.logger.debug(f"Found name-based match: {test_path} -> {stored_path}")
+                stored_item.test_node.status = status
+                stored_item.update_from_node()
+                return
+                
+        self.logger.warning(f"Could not find test item for path: {test_path}")
+        self.logger.debug(f"Available paths: {list(self.item_map.keys())}")
+        
+    def reset_test_statuses(self) -> None:
+        """Reset all test statuses to PENDING."""
+        self.logger.debug("Resetting all test statuses to PENDING")
+        for item in self.item_map.values():
+            if item.test_node.is_test_node():
+                item.test_node.status = TestStatus.PENDING
+                item.update_from_node()
+                
+    def set_test_running(self, test_path: str) -> None:
+        """Set a test status to RUNNING."""
+        self.update_test_status(test_path, TestStatus.RUNNING)
             
     def filter_by_markers(self, markers: Set[str]) -> None:
         """Filter tests by markers."""

@@ -116,22 +116,22 @@ def test_mathematical_operations():
 #     assert 10 % 3 == 1
 #     assert 15 % 5 == 0
 #
-#
-# @pytest.mark.unit
-# def test_string_formatting():
-#     """Test string formatting operations."""
-#     name = "Alice"
-#     age = 30
-#
-#     # f-string formatting
-#     message = f"Hello, {name}! You are {age} years old."
-#     expected = "Hello, Alice! You are 30 years old."
-#     assert message == expected
-#
-#     # format method
-#     template = "Hello, {}! You are {} years old."
-#     message2 = template.format(name, age)
-#     assert message2 == expected
+
+@pytest.mark.skip
+def test_string_formatting():
+    """Test string formatting operations."""
+    name = "Alice"
+    age = 30
+
+    # f-string formatting
+    message = f"Hello, {name}! You are {age} years old."
+    expected = "Hello, Alice! You are 30 years old."
+    assert message == expected
+
+    # format method
+    template = "Hello, {}! You are {} years old."
+    message2 = template.format(name, age)
+    assert message2 == expected
 #
 #
 # @pytest.mark.smoke
