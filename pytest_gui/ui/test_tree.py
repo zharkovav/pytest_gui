@@ -404,24 +404,27 @@ class TestTreeWidget(QTreeWidget):
     def set_test_running(self, test_path: str) -> None:
         """Set a test status to RUNNING."""
         self.update_test_status(test_path, TestStatus.RUNNING)
-            
+
     def filter_by_markers(self, markers: Set[str]) -> None:
         """Filter tests by markers."""
-        if not markers:
-            # Show all items
-            self._set_all_items_visible(True)
-            return
-            
-        # Hide items that don't match any of the markers
+        self._set_all_items_selected(False)
+
+        # Select items that match any of the markers
         for item in self.item_map.values():
             has_marker = bool(item.test_node.markers.intersection(markers))
-            item.setHidden(not has_marker)
-            
+            if has_marker:
+                self.set_item_selection(item, True)
+
     def _set_all_items_visible(self, visible: bool) -> None:
         """Set visibility of all items."""
         for item in self.item_map.values():
             item.setHidden(not visible)
-            
+
+    def _set_all_items_selected(self, selected: bool) -> None:
+        """Set selection of all items."""
+        for item in self.item_map.values():
+            self.set_item_selection(item, selected)
+
     def search_tests(self, search_text: str) -> None:
         """Search for tests by name."""
         if not search_text:

@@ -10,6 +10,8 @@ import random
 class TestBasicFunctionality:
     """Test class for basic functionality."""
 
+    @pytest.mark.gui
+    @pytest.mark.unit
     def test_simple_assertion(self):
         """Test a simple assertion."""
         assert 1 + 1 == 2
@@ -37,13 +39,14 @@ class TestBasicFunctionality:
     #     assert result == 499500
     #
 
-# class TestDataProcessing:
-#     """Test class for data processing functionality."""
-#
-#     def test_user_data_processing(self, sample_data):
-#         """Test processing user data."""
-#         users = sample_data['users']
-#         assert len(users) == 3
+@pytest.mark.gui
+class TestDataProcessing:
+    """Test class for data processing functionality."""
+
+    def test_user_data_processing(self, sample_data):
+        """Test processing user data."""
+        users = sample_data['users']
+        assert len(users) == 3
 #
 #         # Test user names
 #         names = [user['name'] for user in users]
