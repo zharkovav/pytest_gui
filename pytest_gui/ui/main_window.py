@@ -79,7 +79,11 @@ class MainWindow(QMainWindow):
         """Set up the user interface."""
         self.setWindowTitle(f"Pytest GUI - {self.test_directory.name}")
         self.setMinimumSize(800, 600)
-        
+
+        my_icon = QIcon()
+        my_icon.addFile('app_icon.png')
+        self.setWindowIcon(my_icon)
+
         # Create menu bar
         self.create_menu_bar()
         
@@ -590,7 +594,10 @@ class MainWindow(QMainWindow):
         
         if directory:
             self.config_manager.add_recent_project(directory)
-            # TODO: Implement project switching
+            test_path = Path(directory).resolve()
+            self.test_directory = test_path
+            self.test_discovery = TestDiscovery(directory)
+            self.refresh_tests()
             
     def update_recent_projects_menu(self, menu) -> None:
         """Update the recent projects menu."""
